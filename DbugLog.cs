@@ -1,4 +1,4 @@
-﻿#define UNITY_DIALOGS // Comment out to disable dialogs for fatal errors
+#define UNITY_DIALOGS // Comment out to disable dialogs for fatal errors
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -6,78 +6,6 @@ using System.Collections.Generic;
 using UnityEditor;
 #endif
 
-///////////////////////////
-// Types
-///////////////////////////
-
-[System.Flags]
-public enum Channel : uint
-{
-/// <summary>
-    /// Logs from C# to do with our Lua api
-    /// </summary>
-    Lua             = 1 << 0,
-    /// <summary>
-    /// Logs directly from the Lua VM
-    /// </summary>
-    LuaNative       = 1 << 1,
-    /// <summary>
-    /// Logs to do with AI/GOAP/
-    /// </summary>
-    AI              = 1 << 2,
-    /// <summary>
-    /// Logs to do with graphics/rendering
-    /// </summary>
-    Rendering       = 1 << 3,
-    /// <summary>
-    /// Logs to do with the physics system
-    /// </summary>
-    Physics         = 1 << 4,
-    /// <summary>
-    /// Logs to do with our UI system
-    /// </summary>
-    UI              = 1 << 5,
-    /// <summary>
-    /// Logs about NetDevices and networks
-    /// </summary>
-    NetDevice       = 1 << 6,
-    /// <summary>
-    /// Logs to do with sound and Wwise
-    /// </summary>
-    Audio           = 1 << 7,
-    /// <summary>
-    /// Logs to do with level loading
-    /// </summary>
-    Loading         = 1 << 8,
-    /// <summary>
-    /// Logs to do with localisation
-    /// </summary>
-    Localisation    = 1 << 9,
-    /// <summary>
-    /// Logs to do with platform services
-    /// </summary>
-    Platform        = 1 << 10,
-    /// <summary>
-    /// Logs asserts
-    /// </summary>
-    Assert          = 1 << 11,
-    /// <summary>
-    /// Build/Content generation logs
-    /// </summary>
-    Build           = 1 << 12,
-    /// <summary>
-    /// Analytics logs
-    /// </summary>
-    Analytics       = 1 << 13,
-    /// <summary>
-    /// Animation logs
-    /// </summary>
-    Animation       = 1 << 14,
-}
-
-/// <summary>
-/// The priority of the log
-/// </summary>
 public enum Priority
 {
     // Default, simple output about game
@@ -90,29 +18,25 @@ public enum Priority
     FatalError,
 }
 
-public class Logger
+public class DbugLog
 {
-    public const Channel kAllChannels = (Channel) ~0u;
+    public static readonly Channel kAllChannels = new Channel(0xFFFFFFFF);
 
-    ///////////////////////////
-    // Singleton set up 
-    ///////////////////////////
-
-    private static Logger instance;
-    private static Logger Instance
+    private static DbugLog instance;
+    private static DbugLog Instance
     {
         get
         {
-            return instance ?? (instance = new Logger());
+            return instance ?? (instance = new DbugLog());
         }
 
     }
-    
-    private Logger()
+
+    private DbugLog()
     {
-        m_Channels 	= kAllChannels;
+        m_Channels = kAllChannels;
     }
-    
+
     ///////////////////////////
     // Members
     ///////////////////////////
@@ -147,7 +71,7 @@ public class Logger
 
     public static bool IsChannelActive(Channel channelToCheck)
     {
-        return (Instance.m_Channels & channelToCheck) == channelToCheck;
+        return (Instance.m_Channels & channelToCheck).Value != 0;
     }
 
     public static void SetChannels(Channel channelsToSet)
@@ -155,20 +79,29 @@ public class Logger
         Instance.m_Channels = channelsToSet;
     }
 
-    ///////////////////////////
-
-    ///////////////////////////
     // Logging functions
-    ///////////////////////////
 
     /// <summary>
     /// Standard logging function, priority will default to info level
     /// </summary>
     /// <param name="logChannel"></param>
     /// <param name="message"></param>
-    public static void Log(Channel logChannel, string message)
+    public static void Info(Channel logChannel, string message)
     {
         FinalLog(logChannel, Priority.Info, message);
+    }
+    public static void Warning(Channel logChannel, string message)
+    {
+        FinalLog(logChannel, Priority.Warning, message);
+    }
+    public static void Error(Channel logChannel, string message)
+    {
+        FinalLog(logChannel, Priority.Error, message);
+    }
+
+    public static void FatalError(Channel logChannel, string message)
+    {
+        FinalLog(logChannel, Priority.FatalError, message);
     }
 
     /// <summary>
@@ -214,7 +147,7 @@ public class Logger
     {
         if (!condition)
         {
-            FinalLog(Channel.Assert, Priority.FatalError, string.Format("Assert Failed: {0}", message));
+            FinalLog(Channel.System.Console, Priority.FatalError, string.Format("Assert Failed: {0}", message));
         }
     }
 
@@ -229,17 +162,17 @@ public class Logger
         if (IsChannelActive(logChannel))
         {
             // Dialog boxes can't support rich text mark up, do we won't colour the final string 
-			string finalMessage = ContructFinalString(logChannel, priority, message, (priority != Priority.FatalError));
+            string finalMessage = ContructFinalString(logChannel, priority, message, (priority != Priority.FatalError));
 
 #if UNITY_EDITOR && UNITY_DIALOGS
             // Fatal errors will create a pop up when in the editor
             if (priority == Priority.FatalError)
-			{
-			    bool ignore = EditorUtility.DisplayDialog("Fatal error", finalMessage, "Ignore", "Break");
-			    if (!ignore)
-			    {
-			        Debug.Break();
-			    }
+            {
+                bool ignore = EditorUtility.DisplayDialog("Fatal error", finalMessage, "Ignore", "Break");
+                if (!ignore)
+                {
+                    Debug.Break();
+                }
             }
 #endif 
             // Call the correct unity logging function depending on the type of error 
@@ -259,7 +192,7 @@ public class Logger
                     break;
             }
 
-            if(OnLog != null)
+            if (OnLog != null)
             {
                 OnLog.Invoke(logChannel, priority, finalMessage);
             }
@@ -276,56 +209,87 @@ public class Logger
     /// <returns></returns>
     private static string ContructFinalString(Channel logChannel, Priority priority, string message, bool shouldColour)
     {
-        string channelColour    = null;
-        string priortiyColour   = priorityToColour[priority];
+        string channelColour = null;
+        string priorityColour = priorityToColour[priority];
 
-        if(!channelToColour.TryGetValue(logChannel, out channelColour))
+        if (!channelToColour.TryGetValue(logChannel, out channelColour))
         {
-            channelColour = "black";
-            Debug.LogErrorFormat("Please add colour for channel {0}", logChannel);
+            channelColour = "white";
         }
 
-        if(shouldColour)
+        string channelName = GetChannelName(logChannel);
+
+        if (shouldColour)
         {
-            return string.Format("<b><color={0}>[{1}] </color></b> <color={2}>{3}</color>", channelColour, logChannel, priortiyColour, message);
+            return string.Format("<b><color={0}>[{1}] </color></b> <color={2}>{3}</color>", channelColour, channelName, priorityColour, message);
         }
 
-        return string.Format("[{0}] {1}", logChannel, message);
+        return string.Format("[{0}] {1}", channelName, message);
     }
+
+    private static string GetChannelName(Channel logChannel)
+    {
+        foreach (var entry in channelToName)
+        {
+            if (entry.Key.Value == logChannel.Value)
+                return entry.Value;
+        }
+        return "Unknown";
+    }
+
+    private static readonly Dictionary<Channel, string> channelToName = new()
+    {
+        { Channel.Characters.Combat, "Characters:Combat" },
+        { Channel.Characters.Controls, "Characters:Controls" },
+        { Channel.Characters.Targeting, "Characters:Targeting" },
+        { Channel.Characters.NPC, "Characters:NPC" },
+        { Channel.Environment.Prop, "Environment:Prop" },
+        { Channel.Environment.Object, "Environment:Object" },
+        { Channel.Environment.ObjItems, "Environment:ObjItems" },
+        { Channel.Environment.Events, "Environment:Events" },
+        { Channel.System.Serializers, "System:Serializers" },
+        { Channel.System.Managers, "System:Managers" },
+        { Channel.System.Utilities, "System:Utilities" },
+        { Channel.System.Console, "System:Console" },
+        { Channel.UserInterface.Overlay, "UI:Overlay" },
+        { Channel.UserInterface.Terminal, "UI:Terminal" },
+        { Channel.UserInterface.Scenes, "UI:Scenes" },
+        { Channel.Editor.Characters, "Editor:Characters" },
+        { Channel.Editor.Environment, "Editor:Environment" },
+    };
 
     /// <summary>
     /// Map a channel to a colour, using Unity's rich text system
     /// </summary>
-    private static readonly Dictionary<Channel, string> channelToColour = new Dictionary<Channel, string>
+    private static readonly Dictionary<Channel, string> channelToColour = new()
     {
-        { Channel.Lua,          "cyan" },
-        { Channel.LuaNative,    "lightblue" },
-        { Channel.AI,           "blue" },
-        { Channel.Rendering,    "green" },
-        { Channel.Physics,      "yellow" },
-        { Channel.UI,           "purple" },
-        { Channel.NetDevice,    "orange" },
-        { Channel.Audio,        "teal" },
-        { Channel.Loading,      "olive" },
-        { Channel.Localisation, "brown" },
-        { Channel.Platform,     "red" },
-        { Channel.Assert,       "red" },
-        { Channel.Build,        "navy" },
-        { Channel.Analytics,    "maroon" },
+        { Channel.Characters.Combat, "lightblue" },
+        { Channel.Characters.Controls, "lightblue" },
+        { Channel.Characters.Targeting, "lightblue" },
+        { Channel.Characters.NPC, "lightblue" },
+        { Channel.Environment.Prop, "green" },
+        { Channel.Environment.Object, "green" },
+        { Channel.Environment.ObjItems, "green" },
+        { Channel.Environment.Events, "green" },
+        { Channel.System.Serializers, "yellow" },
+        { Channel.System.Managers, "yellow" },
+        { Channel.System.Utilities, "yellow" },
+        { Channel.System.Console, "yellow" },
+        { Channel.UserInterface.Overlay, "purple" },
+        { Channel.UserInterface.Terminal, "purple" },
+        { Channel.UserInterface.Scenes, "purple" },
+        { Channel.Editor.Characters, "grey" },
+        { Channel.Editor.Environment, "grey" },
     };
 
     /// <summary>
     /// Map a priority to a colour, using Unity's rich text system
     /// </summary>
-    private static readonly Dictionary<Priority, string> priorityToColour = new Dictionary<Priority, string>
+    private static readonly Dictionary<Priority, string> priorityToColour = new()
     {
-		#if UNITY_PRO_LICENSE
-        { Priority.Info,        "white" },
-		#else
-		{ Priority.Info,        "black" },
-		#endif
-        { Priority.Warning,     "orange" },
-        { Priority.Error,       "red" },
-        { Priority.FatalError,  "red" },
+        { Priority.Info,"white" },
+        { Priority.Warning,"orange" },
+        { Priority.Error,"red" },
+        { Priority.FatalError,"maroon" },
     };
 }

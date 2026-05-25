@@ -1,0 +1,10 @@
+{
+  "name": "com.khiemluong.dbug-log",
+  "version": "3.1.2",
+  "displayName": "Dbug Log",
+  "description": "Enhanced Logger built off Semaeopus/Unity-Logger",
+  "unity": "2021.3",
+  "author": {
+    "name": "Khiem Luong"
+  }
+}
