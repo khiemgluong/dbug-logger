@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Linq;
 
 public class DbugLogToolbar : EditorWindow
 {
@@ -41,14 +42,13 @@ public class DbugLogToolbar : EditorWindow
 
         GUILayout.Label("Click to toggle logging channels", EditorStyles.boldLabel);
 
-        DrawCategory(typeof(Channel.Characters), ref currentChannels);
-        DrawCategory(typeof(Channel.Environment), ref currentChannels);
-        DrawCategory(typeof(Channel.System), ref currentChannels);
-        DrawCategory(typeof(Channel.UserInterface), ref currentChannels);
-        DrawCategory(typeof(Channel.Editor), ref currentChannels);
+        foreach (var nested in typeof(Channel).GetNestedTypes().OrderBy(t => t.Name))
+        {
+            DrawCategory(nested, ref currentChannels);
+        }
 
         if (EditorGUI.EndChangeCheck())
-        {
+{
             loggerChannels = currentChannels;
             if (EditorApplication.isPlaying)
             {
