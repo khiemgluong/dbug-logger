@@ -56,25 +56,24 @@ public class DBug
     public static void SetChannels(Channel channelsToSet) => Instance.m_Channels = channelsToSet;
 
     public static void Log(string message, Object context = null) => Debug.Log(message, context);
-    public static void Info(Channel logChannel, string message) => FinalLog(logChannel, Priority.Info, message);
-    public static void Warning(Channel logChannel, string message) => FinalLog(logChannel, Priority.Warning, message);
-    public static void Error(Channel logChannel, string message) => FinalLog(logChannel, Priority.Error, message);
-    public static void FatalError(Channel logChannel, string message) => FinalLog(logChannel, Priority.FatalError, message);
+    public static void Info(Channel logChannel, string message, Object context = null) 
+        => FinalLog(logChannel, Priority.Info, message, context);
+    public static void Warning(Channel logChannel, string message, Object context = null) 
+        => FinalLog(logChannel, Priority.Warning, message, context);
+    public static void Error(Channel logChannel, string message, Object context = null) 
+        => FinalLog(logChannel, Priority.Error, message, context);
+    public static void FatalError(Channel logChannel, string message, Object context = null) 
+        => FinalLog(logChannel, Priority.FatalError, message, context);
 
-    public static void Log(Channel logChannel, Priority priority, string message, params object[] args)
-    {
-        FinalLog(logChannel, priority, string.Format(message, args));
-    }
-
-    public static void Assert(bool condition, string message)
+    public static void Assert(bool condition, string message, Object context = null)
     {
         if (!condition)
         {
-            FinalLog(Channel.System.Console, Priority.FatalError, string.Format("Assert Failed: {0}", message));
+            FinalLog(Channel.System.Console, Priority.FatalError, string.Format("Assert Failed: {0}", message), context);
         }
     }
 
-    private static void FinalLog(Channel logChannel, Priority priority, string message)
+    private static void FinalLog(Channel logChannel, Priority priority, string message, Object context = null)
     {
         if (IsChannelActive(logChannel))
         {
@@ -91,13 +90,13 @@ public class DBug
             {
                 case Priority.FatalError:
                 case Priority.Error:
-                    Debug.LogError(finalMessage);
+                    Debug.LogError(finalMessage, context);
                     break;
                 case Priority.Warning:
-                    Debug.LogWarning(finalMessage);
+                    Debug.LogWarning(finalMessage, context);
                     break;
                 case Priority.Info:
-                    Debug.Log(finalMessage);
+                    Debug.Log(finalMessage, context);
                     break;
             }
 
