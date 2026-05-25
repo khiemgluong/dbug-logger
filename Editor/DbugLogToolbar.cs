@@ -11,7 +11,7 @@ public class DbugLogToolbar : EditorWindow
     public static void ShowWindow()
     {
         DbugLogToolbar window = GetWindow<DbugLogToolbar>("DbugLog Config");
-        
+
         // Set fixed dimensions
         float windowWidth = 300f;
         float windowHeight = 540f; // Half of 1080
@@ -68,7 +68,7 @@ public class DbugLogToolbar : EditorWindow
         EditorGUILayout.EndScrollView();
 
         if (EditorGUI.EndChangeCheck())
-{
+        {
             loggerChannels = currentChannels;
             if (EditorApplication.isPlaying)
             {
@@ -103,7 +103,7 @@ public class DbugLogToolbar : EditorWindow
 
                 // Use the channel name to a String() rather than hardcode it
                 string fullName = channel.ToString();
-// Trim the enum channel values
+                // Trim the enum channel values
                 string label = fullName.Contains(".") ? fullName.Substring(fullName.LastIndexOf('.') + 1) : fullName;
 
                 if (GUILayout.Button(label))
@@ -117,7 +117,7 @@ public class DbugLogToolbar : EditorWindow
                 GUILayout.Space(5);
 
                 EditorGUILayout.EndHorizontal();
-}
+            }
             EditorGUI.indentLevel--;
         }
     }

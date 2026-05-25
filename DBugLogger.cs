@@ -1,8 +1,8 @@
-#define UNITY_DIALOGS // Comment out to disable dialogs for fatal errors
 using UnityEngine;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
+using System.Diagnostics;
 
 #if UNITY_EDITOR && UNITY_DIALOGS
 using UnityEditor;
@@ -55,48 +55,77 @@ public class DBug
     }
     public static void SetChannels(Channel channelsToSet) => Instance.m_Channels = channelsToSet;
 
-    public static void Log(string message, Object context = null) => Debug.Log(message, context);
-    public static void Info(Channel logChannel, string message, Object context = null) 
-        => FinalLog(logChannel, Priority.Info, message, context);
-    public static void Warning(Channel logChannel, string message, Object context = null) 
-        => FinalLog(logChannel, Priority.Warning, message, context);
-    public static void Error(Channel logChannel, string message, Object context = null) 
-        => FinalLog(logChannel, Priority.Error, message, context);
-    public static void FatalError(Channel logChannel, string message, Object context = null) 
-        => FinalLog(logChannel, Priority.FatalError, message, context);
+    [Conditional("UNITY_EDITOR")]
+    public static void Log(string message, Object context = null) => UnityEngine.Debug.Log(message, context);
 
+    [Conditional("UNITY_EDITOR")]
+    public static void Info(Channel logChannel, string message, Object context = null) 
+#if UNITY_EDITOR
+        => FinalLog(logChannel, Priority.Info, message, context);
+#else
+        {}
+#endif
+
+    [Conditional("UNITY_EDITOR")]
+    public static void Warning(Channel logChannel, string message, Object context = null) 
+#if UNITY_EDITOR
+        => FinalLog(logChannel, Priority.Warning, message, context);
+#else
+        {}
+#endif
+
+    [Conditional("UNITY_EDITOR")]
+    public static void Error(Channel logChannel, string message, Object context = null) 
+#if UNITY_EDITOR
+        => FinalLog(logChannel, Priority.Error, message, context);
+#else
+        {}
+#endif
+
+    [Conditional("UNITY_EDITOR")]
+    public static void FatalError(Channel logChannel, string message, Object context = null) 
+#if UNITY_EDITOR
+        => FinalLog(logChannel, Priority.FatalError, message, context);
+#else
+        {}
+#endif
+
+    [Conditional("UNITY_EDITOR")]
     public static void Assert(bool condition, string message, Object context = null)
     {
+#if UNITY_EDITOR
         if (!condition)
         {
             FinalLog(Channel.System.Console, Priority.FatalError, string.Format("Assert Failed: {0}", message), context);
         }
+#endif
     }
 
+#if UNITY_EDITOR
     private static void FinalLog(Channel logChannel, Priority priority, string message, Object context = null)
     {
         if (IsChannelActive(logChannel))
         {
             string finalMessage = ContructFinalString(logChannel, priority, message, (priority != Priority.FatalError));
 
-#if UNITY_EDITOR && UNITY_DIALOGS
+#if UNITY_DIALOGS
             if (priority == Priority.FatalError)
             {
                 bool ignore = EditorUtility.DisplayDialog("Fatal error", finalMessage, "Ignore", "Break");
-                if (!ignore) Debug.Break();
+                if (!ignore) UnityEngine.Debug.Break();
             }
 #endif
             switch (priority)
             {
                 case Priority.FatalError:
                 case Priority.Error:
-                    Debug.LogError(finalMessage, context);
+                    UnityEngine.Debug.LogError(finalMessage, context);
                     break;
                 case Priority.Warning:
-                    Debug.LogWarning(finalMessage, context);
+                    UnityEngine.Debug.LogWarning(finalMessage, context);
                     break;
                 case Priority.Info:
-                    Debug.Log(finalMessage, context);
+                    UnityEngine.Debug.Log(finalMessage, context);
                     break;
             }
 
@@ -119,19 +148,25 @@ public class DBug
 
         return string.Format("[{0}] {1}", channelName, message);
     }
+#endif
 
     public static string GetChannelName(Channel logChannel)
     {
+#if UNITY_EDITOR
         Initialize();
         if (channelToName.TryGetValue(logChannel, out string name))
             return name;
+#endif
         return "Unknown";
     }
 
+#if UNITY_EDITOR
     private static readonly Dictionary<Channel, string> channelToName = new();
     private static readonly Dictionary<Channel, string> channelToColour = new();
+#endif
     private static bool m_Initialized = false;
 
+#if UNITY_EDITOR
     private static readonly Dictionary<string, string> categoryToColour = new()
     {
         { "Characters", "lightblue" },
@@ -141,6 +176,7 @@ public class DBug
         { "Editor", "grey" },
         { "Data", "cyan" }
     };
+#endif
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     public static void Initialize()
@@ -148,6 +184,7 @@ public class DBug
         if (m_Initialized) return;
         m_Initialized = true;
 
+#if UNITY_EDITOR
         var channelType = typeof(Channel);
         var categories = channelType.GetNestedTypes().OrderBy(t => t.Name).ToList();
         int bitIndex = 0;
@@ -169,6 +206,7 @@ public class DBug
                 channelToColour[channel] = color;
             }
         }
+#endif
     }
 
     private static readonly Dictionary<Priority, string> priorityToColour = new()
