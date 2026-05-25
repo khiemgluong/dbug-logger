@@ -24,7 +24,7 @@ public class DebugLogToolbar : EditorWindow
         foldouts["UserInterface"] = true;
         foldouts["Editor"] = true;
 
-        DebugLog.SetChannels(loggerChannels);
+        DbugLog.SetChannels(loggerChannels);
     }
 
     private void OnGUI()
@@ -34,13 +34,9 @@ public class DebugLogToolbar : EditorWindow
 
         EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("Clear all"))
-        {
             currentChannels = new Channel(0);
-        }
         if (GUILayout.Button("Select all"))
-        {
-            currentChannels = DebugLog.kAllChannels;
-        }
+            currentChannels = DbugLog.kAllChannels;
         EditorGUILayout.EndHorizontal();
 
         GUILayout.Label("Click to toggle logging channels", EditorStyles.boldLabel);
@@ -82,10 +78,10 @@ public class DebugLogToolbar : EditorWindow
             loggerChannels = currentChannels;
             if (EditorApplication.isPlaying)
             {
-                DebugLog.SetChannels(currentChannels);
+                DbugLog.SetChannels(currentChannels);
             }
         }
-}
+    }
 
     private void DrawCategory(string name, (string label, Channel channel)[] subcategories, ref Channel currentChannels)
     {
@@ -97,7 +93,7 @@ public class DebugLogToolbar : EditorWindow
             {
                 EditorGUILayout.BeginHorizontal();
                 bool active = (currentChannels & sub.channel).Value != 0;
-                
+
                 GUI.enabled = false;
                 EditorGUILayout.Toggle(active, GUILayout.Width(20));
                 GUI.enabled = true;
