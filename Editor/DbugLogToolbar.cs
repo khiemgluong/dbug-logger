@@ -56,8 +56,6 @@ public class DbugLogToolbar : EditorWindow
             currentChannels = DBug.kAllChannels;
         EditorGUILayout.EndHorizontal();
 
-        GUILayout.Label("Click to toggle logging channels", EditorStyles.boldLabel);
-
         scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
 
         foreach (var nested in typeof(Channel).GetNestedTypes().OrderBy(t => t.Name))

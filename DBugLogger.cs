@@ -20,8 +20,8 @@ public class DBug
 {
     public static readonly Channel kAllChannels = new Channel(0xFFFFFFFF);
 
-    private static DBug instance;
-    private static DBug Instance
+    static DBug instance;
+    static DBug Instance
     {
         get
         {
@@ -34,12 +34,12 @@ public class DBug
         }
     }
 
-    private DBug()
+    DBug()
     {
         m_Channels = kAllChannels;
     }
 
-    private Channel m_Channels;
+    Channel m_Channels;
 
     public delegate void OnLogFunc(Channel channel, Priority priority, string message);
     public static event OnLogFunc OnLog;
@@ -59,7 +59,7 @@ public class DBug
     public static void Log(string message, Object context = null) => UnityEngine.Debug.Log(message, context);
 
     [Conditional("UNITY_EDITOR")]
-    public static void Info(Channel logChannel, string message, Object context = null) 
+    public static void Info(Channel logChannel, string message, Object context = null)
 #if UNITY_EDITOR
         => FinalLog(logChannel, Priority.Info, message, context);
 #else
@@ -67,7 +67,7 @@ public class DBug
 #endif
 
     [Conditional("UNITY_EDITOR")]
-    public static void Warning(Channel logChannel, string message, Object context = null) 
+    public static void Warning(Channel logChannel, string message, Object context = null)
 #if UNITY_EDITOR
         => FinalLog(logChannel, Priority.Warning, message, context);
 #else
@@ -75,7 +75,7 @@ public class DBug
 #endif
 
     [Conditional("UNITY_EDITOR")]
-    public static void Error(Channel logChannel, string message, Object context = null) 
+    public static void Error(Channel logChannel, string message, Object context = null)
 #if UNITY_EDITOR
         => FinalLog(logChannel, Priority.Error, message, context);
 #else
@@ -83,7 +83,7 @@ public class DBug
 #endif
 
     [Conditional("UNITY_EDITOR")]
-    public static void FatalError(Channel logChannel, string message, Object context = null) 
+    public static void FatalError(Channel logChannel, string message, Object context = null)
 #if UNITY_EDITOR
         => FinalLog(logChannel, Priority.FatalError, message, context);
 #else
@@ -102,7 +102,7 @@ public class DBug
     }
 
 #if UNITY_EDITOR
-    private static void FinalLog(Channel logChannel, Priority priority, string message, Object context = null)
+    static void FinalLog(Channel logChannel, Priority priority, string message, Object context = null)
     {
         if (IsChannelActive(logChannel))
         {
@@ -133,7 +133,7 @@ public class DBug
         }
     }
 
-    private static string ContructFinalString(Channel logChannel, Priority priority, string message, bool shouldColour)
+    static string ContructFinalString(Channel logChannel, Priority priority, string message, bool shouldColour)
     {
         if (!channelToColour.TryGetValue(logChannel, out string channelColour))
             channelColour = "white";
@@ -142,11 +142,10 @@ public class DBug
         string channelName = GetChannelName(logChannel);
 
         if (shouldColour)
-        {
-            return string.Format("<b><color={0}>[{1}] </color></b> <color={2}>{3}</color>", channelColour, channelName, priorityColour, message);
-        }
+            return string.Format("<color={0}>{1}: </color> <color={2}>{3}</color>",
+                            channelColour, channelName, priorityColour, message);
 
-        return string.Format("[{0}] {1}", channelName, message);
+        return string.Format("{0}: {1}", channelName, message);
     }
 #endif
 
@@ -161,20 +160,20 @@ public class DBug
     }
 
 #if UNITY_EDITOR
-    private static readonly Dictionary<Channel, string> channelToName = new();
-    private static readonly Dictionary<Channel, string> channelToColour = new();
+    static readonly Dictionary<Channel, string> channelToName = new();
+    static readonly Dictionary<Channel, string> channelToColour = new();
 #endif
-    private static bool m_Initialized = false;
+    static bool m_Initialized = false;
 
 #if UNITY_EDITOR
-    private static readonly Dictionary<string, string> categoryToColour = new()
+    static readonly Dictionary<string, string> categoryToColour = new()
     {
-        { "Characters", "lightblue" },
+        { "Characters", "red" },
+        { "Data", "cyan" },
         { "Environment", "green" },
+        { "Editor", "orange" },
         { "System", "yellow" },
         { "UserInterface", "purple" },
-        { "Editor", "grey" },
-        { "Data", "cyan" }
     };
 #endif
 
@@ -209,7 +208,7 @@ public class DBug
 #endif
     }
 
-    private static readonly Dictionary<Priority, string> priorityToColour = new()
+    static readonly Dictionary<Priority, string> priorityToColour = new()
     {
         { Priority.Info,"white" },
         { Priority.Warning,"orange" },
