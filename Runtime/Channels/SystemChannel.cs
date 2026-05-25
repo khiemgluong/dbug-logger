@@ -7,6 +7,6 @@ public partial struct Channel
         public static readonly Channel Managers = 0;
         public static readonly Channel Utilities = 0;
         public static readonly Channel Network = 0;
-
+        public static readonly Channel Rendering = 0;
     }
 }

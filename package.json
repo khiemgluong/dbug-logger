@@ -1,6 +1,6 @@
 {
   "name": "com.khiemluong.dbug-logger",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "displayName": "DBug Logger",
   "description": "Enhanced Logger built off Semaeopus/Unity-Logger",
   "unity": "2021.3",
