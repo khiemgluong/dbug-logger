@@ -28,6 +28,8 @@ public class DBugLoggerToolbar : EditorWindow
         window.position = new Rect(x, y, windowWidth, windowHeight);
     }
 
+    private const string PREFS_KEY = "DBugLogger_Channels";
+
     [SerializeField]
     Channel loggerChannels = new(ulong.MaxValue);
 
@@ -38,7 +40,17 @@ public class DBugLoggerToolbar : EditorWindow
     {
         foreach (var nested in typeof(Channel).GetNestedTypes())
         {
-            foldouts[nested.Name] = true;
+            string foldoutKey = "DBugLogger_Foldout_" + nested.Name;
+            foldouts[nested.Name] = EditorPrefs.GetBool(foldoutKey, true);
+        }
+
+        if (EditorPrefs.HasKey(PREFS_KEY))
+        {
+            string storedValue = EditorPrefs.GetString(PREFS_KEY);
+            if (ulong.TryParse(storedValue, out ulong val))
+            {
+                loggerChannels = new Channel(val);
+            }
         }
 
         DBug.SetChannels(loggerChannels);
@@ -50,10 +62,10 @@ public class DBugLoggerToolbar : EditorWindow
         EditorGUI.BeginChangeCheck();
 
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("Clear all"))
-            currentChannels = new Channel(0);
         if (GUILayout.Button("Select all"))
             currentChannels = DBug.kAllChannels;
+        if (GUILayout.Button("Clear all"))
+            currentChannels = new Channel(0);
         EditorGUILayout.EndHorizontal();
 
         scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
@@ -68,10 +80,8 @@ public class DBugLoggerToolbar : EditorWindow
         if (EditorGUI.EndChangeCheck())
         {
             loggerChannels = currentChannels;
-            if (EditorApplication.isPlaying)
-            {
-                DBug.SetChannels(currentChannels);
-            }
+            EditorPrefs.SetString(PREFS_KEY, loggerChannels.Value.ToString());
+            DBug.SetChannels(currentChannels);
         }
     }
 
@@ -80,7 +90,14 @@ public class DBugLoggerToolbar : EditorWindow
         string name = categoryType.Name;
         if (!foldouts.ContainsKey(name)) foldouts[name] = true;
 
-        foldouts[name] = EditorGUILayout.Foldout(foldouts[name], name, true);
+        EditorGUI.BeginChangeCheck();
+        bool foldout = EditorGUILayout.Foldout(foldouts[name], name, true);
+        if (EditorGUI.EndChangeCheck())
+        {
+            foldouts[name] = foldout;
+            EditorPrefs.SetBool("DBugLogger_Foldout_" + name, foldout);
+        }
+
         if (foldouts[name])
         {
             EditorGUI.indentLevel++;
