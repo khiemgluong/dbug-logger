@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Linq;
 using System.Diagnostics;
 
-#if UNITY_EDITOR && UNITY_DIALOGS
+#if UNITY_EDITOR
 using UnityEditor;
 #endif
 
@@ -37,6 +37,17 @@ public class DBug
     DBug()
     {
         m_Channels = kAllChannels;
+
+#if UNITY_EDITOR
+        if (EditorPrefs.HasKey("DBugLogger_Channels"))
+        {
+            string storedValue = EditorPrefs.GetString("DBugLogger_Channels");
+            if (ulong.TryParse(storedValue, out ulong val))
+            {
+                m_Channels = new Channel(val);
+            }
+        }
+#endif
     }
 
     Channel m_Channels;
